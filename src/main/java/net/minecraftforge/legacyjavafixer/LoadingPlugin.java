@@ -1,4 +1,8 @@
-package net.minecraftforge.legacyjavafixer.sort;
+/*
+ * Copyright (c) LexManos
+ * SPDX-License-Identifier: MIT
+ */
+package net.minecraftforge.legacyjavafixer;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import net.minecraft.launchwrapper.Launch;
@@ -9,17 +13,14 @@ import java.util.Map;
 /**
  * Used as a dummy plugin to add our cascading tweaker.
  * This allows us to provide this tweaker via the '-Dfml.coreMods.load' system property.
- * <p>
- * Created by covers1624 on 1/6/21.
  */
-@IFMLLoadingPlugin.SortingIndex (-2147483648)
-public class LegacyJavaSortDummyLoadingPlugin implements IFMLLoadingPlugin {
-
-    public LegacyJavaSortDummyLoadingPlugin() {
+@IFMLLoadingPlugin.SortingIndex(-2147483648)
+public class LoadingPlugin implements IFMLLoadingPlugin {
+    public LoadingPlugin() {
         @SuppressWarnings ("unchecked")
         List<String> tweakClasses = (List<String>) Launch.blackboard.get("TweakClasses");
         // Add our tweaker to LaunchWrapper, this is done the same as FMLTweaker
-        tweakClasses.add("net.minecraftforge.legacyjavafixer.sort.LegacyJavaSortTweaker");
+        tweakClasses.add("net.minecraftforge.legacyjavafixer.Tweaker");
     }
 
     //@formatter:off
@@ -28,6 +29,6 @@ public class LegacyJavaSortDummyLoadingPlugin implements IFMLLoadingPlugin {
     @Override public String getModContainerClass() { return null; }
     @Override public String getSetupClass() { return null; }
     @Override public void injectData(Map<String, Object> map) { }
-    @Override public String getAccessTransformerClass() { return null; }
+    public String getAccessTransformerClass() { return null; } // Added in 1.7.10
     //@formatter:on
 }

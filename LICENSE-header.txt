@@ -1,0 +1,2 @@
+Copyright (c) LexManos
+SPDX-License-Identifier: MIT

@@ -1,68 +1,90 @@
-buildscript {
-    repositories {
-        mavenLocal()
-        jcenter()
-        maven { url "https://maven.minecraftforge.net/" }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradleutils:GradleUtils:1.0.+'
-    }
-}
-
 plugins {
-    id 'java'
-    id 'eclipse'
+    id 'java-library'
     id 'maven-publish'
+    alias libs.plugins.licenser
+    alias libs.plugins.gitversion
+    alias libs.plugins.gradleutils
+    alias libs.plugins.forgegradle
 }
 
-apply plugin: 'net.minecraftforge.gradleutils'
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(7)
-
-version = gradleutils.tagOffsetVersion
+gradleutils.displayName = 'Legacy Java Fixer'
+description = 'A tweaker that fixes legacy Forge versions for the sorting change in java 8u20'
+version = gitversion.tagOffset
 group = 'net.minecraftforge'
-archivesBaseName = 'legacyjavafixer'
+println "Version: $version"
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(8)
+}
 
 repositories {
+    minecraft.mavenizer(it)
     mavenCentral()
-    maven {
-        url = 'https://maven.minecraftforge.net/'
-        metadataSources {
-            gradleMetadata()
-            mavenPom()
-            artifact()
-        }
-    }
+    maven gradleutils.forgeMaven
     maven { url = 'https://libraries.minecraft.net/' }
 }
 
+minecraft {
+    runs {
+        configureEach {
+            systemProperty 'fml.coreMods.load', 'net.minecraftforge.legacyjavafixer.LoadingPlugin'
+        }
+        register('client') {
+            workingDir = file('runs/main/client/')
+            systemProperty 'fml.ignoreInvalidMinecraftCertificates', 'true'
+        }
+    }
+}
+
 dependencies {
-    implementation 'net.minecraft:launchwrapper:1.11'
-    implementation 'com.google.guava:guava:16.0'
-    implementation 'net.minecraftforge:forge:1.7.10-10.13.1.1225:universal'
+    // We just need the classes to compile against, but include the full thing so we can test run configs
+    implementation minecraft.dependency(libs.forge)
+}
+
+license {
+    header rootProject.file('LICENSE-header.txt')
+    newLine false
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId project.group
-            artifactId project.archivesBaseName
-            version project.version
-            artifact jar
-        }
+tasks.named('jar', Jar) {
+    manifest {
+        attributes(
+            'TweakClass': 'net.minecraftforge.legacyjavafixer.Tweaker',
+            'TweakOrder': -2147483648
+        )
     }
-    repositories {
-        maven {
-            if (project.hasProperty('forgeMavenPassword')) {
-                credentials {
-                    username project.properties.forgeMavenUser
-                    password project.properties.forgeMavenPassword
-                }
-                url 'https://files.minecraftforge.net/maven/manage/upload'
-            } else {
-                url 'file://' + rootProject.file('repo').getAbsolutePath()
+}
+
+publishing {
+    publications.register('mavenJava', MavenPublication) {
+        // This causes it to skip any transitive dependencies in the pom
+        artifact tasks.named('jar')
+        
+        gradleutils.promote(it)
+
+        pom { pom ->
+            name = gradleutils.displayName
+            description = project.description
+
+            gradleutils.pom.addRemoteDetails(pom)
+
+            licenses {
+                license gradleutils.pom.licenses.MIT
+            }
+
+            developers {
+                developer gradleutils.pom.developers.LexManos
             }
         }
     }
+
+    repositories {
+        maven gradleutils.publishingForgeMaven
+    }
 }
+

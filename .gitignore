@@ -20,3 +20,6 @@
 # Include git important files
 !.gitmodules
 !.gitignore
+
+# Include github workflow
+!.github/
